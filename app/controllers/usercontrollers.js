@@ -1,11 +1,40 @@
 const db = require("../../database");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const register = require("../validations/auth/registerval");
 
 
 
 module.exports = class UserController {
+  static async getDetail(req, res) {
+    try {
+      const user = await db("users AS u")
+      .leftJoin("stores AS s", "s.id", "u.store_id")
+      .select("u.id AS id_user", "u.name", "u.email", "u.avatar", "u.created_at", "u.updated_at", "s.id AS id_store", "s.name AS name_store", "s.address", "s.avatar AS store_avatar", "s.created_at AS createdAt", "s.updated_at AS updatedAt")
+      .where({ "u.id": req.user.id })
+      .first();
+      // return console.log(user);
+
+      const avatar_user  = await minio.presignedUrl("GET", "tokopedia-bucket", user.avatar);
+
+      return res.json({
+        success: true,
+        message: "data user successfully retrieved",
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          avatar: avatar_user,
+          created_at: user.created_at,
+          updated_at: user.updated_at
+        }
+      })
+    } catch (error) {
+      return res.boom.badRequest(error.message);
+    }
+  }
+
   static async register(req, res) {
     try {
       // check and retrieve request
@@ -76,4 +105,6 @@ module.exports = class UserController {
       return res.boom.badRequest(error.message);
     }
   }
+
+
 };
